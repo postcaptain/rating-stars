@@ -99,8 +99,7 @@
   background-color: var(--rs-star-gold);
 }
 
-/* Light all “previous” stars (to the left via row-reverse).
-   Wrapped in @supports so older Firefox still gets the main checked star. */
+/* Light all “previous” stars (to the left via row-reverse) */
 @supports selector(:has(*)) {
   .rating-stars .form_responses:not(:hover)
     .form_response:has(input[type="radio"]:checked) ~ .form_response > label {
@@ -124,17 +123,11 @@
 }
 
 /* ============================================================
-   HOVER PREVIEW (temporarily overrides checked/focus)
+   HOVER PREVIEW (always wins)
    ============================================================ */
-
-/* Hovered star is gold */
-.rating-stars .form_response:hover > label {
-  background-color: var(--rs-star-gold);
-}
-
-/* …and all “previous” stars (to the left) are gold too */
+.rating-stars .form_response:hover > label,
 .rating-stars .form_response:hover ~ .form_response > label {
-  background-color: var(--rs-star-gold);
+  background-color: var(--rs-star-gold) !important;
 }
 
 /* ---------- Minor niceties ---------- */
