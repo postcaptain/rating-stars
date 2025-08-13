@@ -52,6 +52,7 @@
 .rating-stars .form_responses {
   display: flex;
   flex-direction: row-reverse; /* lets ~ select “previous” stars */
+  justify-content: flex-end;
   gap: var(--rs-star-gap);
 }
 
