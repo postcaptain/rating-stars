@@ -1,9 +1,14 @@
 /* ============================================================
-   rating-stars.css — CSS-only star UI for radio groups
+   rating-stars.css — customizable styling to turn radio buttons into rating stars
    Apply to a field by adding class="rating-stars" to its wrapper:
    <div class="form_question form_radio rating-stars" ...> … </div>
+   Use the companion js to quickly and easily add that class to all or specific radio button fields
 
-   Works with Slate’s markup:
+   ========================================================================================================================
+   Note that options need to be in reverse order! So for 1-5 stars to appear left to right, the prompt options on the form need to be 5, 4, 3, 2, 1 (reverse order)
+   ========================================================================================================================
+
+   Slate’s markup for reference
      .form_question.form_radio
        └─ .form_responses
            ├─ .form_response  (repeat)
@@ -19,7 +24,7 @@
    - No HTML changes required
    ============================================================ */
 
-/* ---------- Defaults & theme (override in your own CSS if desired) ---------- */
+/* ---------- Defaults & theme (override in your own local form CSS if desired) ---------- */
 .rating-stars {
   /* Visual star size & spacing */
   --rs-star-size: 32px;
@@ -81,7 +86,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Optional: focus ring for keyboard users */
+/* Focus ring for keyboard users */
 .rating-stars .form_response:focus-within > label {
   outline: 2px solid #666;
   outline-offset: 2px;
