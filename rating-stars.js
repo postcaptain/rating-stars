@@ -1,93 +1,65 @@
 /*
  * rating-stars.js
- * Hybrid mode: Apply to all radios OR specific `data-export` list
- * No external CSS file needed — styles are injected directly
+ * Hybrid approach: if window.RATING_STARS_EXPORTS has items, target those data-export fields.
+ * Otherwise, apply to ALL .form_question.form_radio groups.
+ * Loads CSS from the same CDN path as this JS (or cfg override) — no inline CSS here.
  */
+(function () {
+  var cfg = window.RATING_STARS_CONFIG || {};
+  var list = Array.isArray(cfg.exports) ? cfg.exports : window.RATING_STARS_EXPORTS;
+  var cssHref = cfg.cssHref || window.RATING_STARS_CSS;
 
-(function() {
-  // Default CSS variables
-  var css = `
-:root {
-  --rs-star-size: 32px;
-  --rs-star-gap: 0px;
-  --rs-star-grey: #bdbdbd;
-  --rs-star-gold: #fbc02d;
-}
-
-.rating-stars .form_responses {
-  display: flex;
-  flex-direction: row-reverse;
-  gap: var(--rs-star-gap);
-}
-.rating-stars input[type="radio"] {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-.rating-stars label {
-  display: inline-block;
-  width: var(--rs-star-size);
-  height: var(--rs-star-size);
-  font-size: 0;
-  cursor: pointer;
-  background-color: var(--rs-star-grey);
-  -webkit-mask: var(--star-mask) center / 100% 100% no-repeat;
-  mask: var(--star-mask) center / 100% 100% no-repeat;
-}
-
-/* Star mask variable (must be separate for Safari compatibility) */
-:root {
-  --star-mask: url("data:image/svg+xml;utf8, \
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'> \
-<path fill='black' d='M12 17.27L18.18 21l-1.64-7.03 \
-L22 9.24l-7.19-.62L12 2 9.19 8.62 \
-2 9.24l5.46 4.73L5.82 21z'/> \
-</svg>");
-}
-
-/* Checked state — only when not hovering */
-.rating-stars .form_responses:not(:hover) input[type="radio"]:checked + label,
-.rating-stars .form_responses:not(:hover) .form_response:has(input[type="radio"]:checked) ~ .form_response > label {
-  background-color: var(--rs-star-gold);
-}
-
-/* Hover preview overrides */
-.rating-stars .form_response:hover > label,
-.rating-stars .form_response:hover ~ .form_response > label {
-  background-color: var(--rs-star-gold);
-}
-
-/* Keyboard focus preview */
-.rating-stars .form_response:focus-within > label,
-.rating-stars .form_response:focus-within ~ .form_response > label {
-  background-color: var(--rs-star-gold);
-}
-
-.rating-stars .form_response {
-  display: inline-flex;
-  align-items: center;
-}
-`;
-
-  // Inject CSS into <head>
-  var style = document.createElement('style');
-  style.textContent = css;
-  document.head.appendChild(style);
-
-  // Determine which fields to target
-  var exportsList = window.RATING_STARS_EXPORTS;
-  var selector;
-  if (Array.isArray(exportsList) && exportsList.length) {
-    selector = exportsList.map(function(exp) {
-      return '.form_question.form_radio[data-export="' + exp + '"]';
-    }).join(',');
-  } else {
-    selector = '.form_question.form_radio';
+  // Derive CSS URL from this script's src if not explicitly provided
+  if (!cssHref) {
+    var s = document.currentScript;
+    if (!s) {
+      var scripts = document.getElementsByTagName("script");
+      s = scripts[scripts.length - 1];
+    }
+    var src = (s && s.src) || "";
+    // Replace .../rating-stars(.min).js?x=y  ->  .../rating-stars.css?x=y
+    cssHref = src.replace(/rating-stars(\.min)?\.js(\?.*)?$/i, "rating-stars.css$2");
+    // Fallback hard URL (edit to your latest tag if needed)
+    if (!/\.css/i.test(cssHref)) {
+      cssHref = "https://cdn.jsdelivr.net/gh/postcaptain/rating-stars@v0.8.4/rating-stars.css";
+    }
   }
 
-  // Apply .rating-stars to matching fields
-  document.querySelectorAll(selector).forEach(function(el) {
-    el.classList.add('rating-stars');
-  });
+  // Inject CSS <link> once
+  if (!document.querySelector('link[rel="stylesheet"][href="'+cssHref+'"]')) {
+    var link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = cssHref;
+    document.head.appendChild(link);
+  }
 
+  function apply() {
+    var selector;
+    if (Array.isArray(list) && list.length) {
+      selector = list.map(function (exp) {
+        return '.form_question.form_radio[data-export="' + exp + '"]';
+      }).join(",");
+    } else {
+      selector = ".form_question.form_radio";
+    }
+    document.querySelectorAll(selector).forEach(function (el) {
+      el.classList.add("rating-stars");
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", apply);
+  } else {
+    apply();
+  }
+
+  // Optional: watch for dynamically-added forms
+  if (cfg.observe !== false) {
+    var mo = new MutationObserver(function (mut) {
+      for (var i = 0; i < mut.length; i++) {
+        if (mut[i].addedNodes && mut[i].addedNodes.length) { apply(); break; }
+      }
+    });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+  }
 })();
