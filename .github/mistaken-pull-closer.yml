@@ -1,0 +1,8 @@
+# .github/mistaken-pull-closer.yml
+# Close *all* PRs and post a friendly comment.
+filters:
+  - true
+commentBody: |
+  Thanks for the contribution! This repository doesn't accept pull requests.
+  Please follow the instructions in the README instead.
+addLabel: false
