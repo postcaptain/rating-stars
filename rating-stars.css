@@ -1,0 +1,149 @@
+/* ============================================================
+   rating-stars.css — CSS-only star UI for radio groups
+   Apply to a field by adding class="rating-stars" to its wrapper:
+   <div class="form_question form_radio rating-stars" ...> … </div>
+
+   Works with Slate’s markup:
+     .form_question.form_radio
+       └─ .form_responses
+           ├─ .form_response  (repeat)
+           │   ├─ <input type="radio" ...>
+           │   └─ <label>1</label>
+           └─ ...
+
+   Key features:
+   - Hover preview temporarily overrides saved selection & focus
+   - Keyboard-friendly (focus ring; arrow/tab navigation)
+   - Touch-friendly (larger tap targets based on variables)
+   - Theme via CSS variables; safe defaults included
+   - No HTML changes required
+   ============================================================ */
+
+/* ---------- Defaults & theme (override in your own CSS if desired) ---------- */
+.rating-stars {
+  /* Visual star size & spacing */
+  --rs-star-size: 32px;
+  --rs-star-gap: 0px;
+
+  /* Colors */
+  --rs-star-grey: #bdbdbd; /* unselected */
+  --rs-star-gold: #fbc02d; /* selected/hover */
+
+  /* Tap target sizing */
+  --rs-tap-min: 44px;   /* recommended minimum touch size */
+  --rs-tap-scale: 1;    /* hit area = star-size * tap-scale (min 44px) */
+
+  /* Computed hit area (do not override directly) */
+  --rs-tap-size: max(calc(var(--rs-star-size) * var(--rs-tap-scale)), var(--rs-tap-min));
+
+  /* Single-path star as a mask (black = visible) */
+  --rs-star-mask: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>\
+<path fill='black' d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z'/>\
+</svg>");
+}
+
+/* ---------- Layout: left→right visually (row-reverse for sibling logic) ---------- */
+.rating-stars .form_responses {
+  display: flex;
+  flex-direction: row-reverse; /* lets ~ select “previous” stars */
+  gap: var(--rs-star-gap);
+}
+
+/* ---------- Hide radios, keep accessible ---------- */
+.rating-stars input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- Labels become the star UI (big hit area + masked star) ---------- */
+.rating-stars label {
+  display: inline-block;
+  width:  var(--rs-tap-size);  /* generous tap target */
+  height: var(--rs-tap-size);
+  font-size: 0;                /* hide numeric text (1..5) */
+  cursor: pointer;
+
+  /* Color shows through the mask */
+  background-color: var(--rs-star-grey);
+
+  /* Star mask (include -webkit- for Safari) */
+  -webkit-mask-image: var(--rs-star-mask);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: var(--rs-star-size) var(--rs-star-size);
+  mask-image: var(--rs-star-mask);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: var(--rs-star-size) var(--rs-star-size);
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Optional: focus ring for keyboard users */
+.rating-stars .form_response:focus-within > label {
+  outline: 2px solid #666;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   CHECKED (saved) state — only when NOT hovering the group
+   Ensures hover preview always wins during hover.
+   ============================================================ */
+
+/* Checked star itself */
+.rating-stars .form_responses:not(:hover)
+  .form_response input[type="radio"]:checked + label {
+  background-color: var(--rs-star-gold);
+}
+
+/* Light all “previous” stars (to the left via row-reverse).
+   Wrapped in @supports so older Firefox still gets the main checked star. */
+@supports selector(:has(*)) {
+  .rating-stars .form_responses:not(:hover)
+    .form_response:has(input[type="radio"]:checked) ~ .form_response > label {
+    background-color: var(--rs-star-gold);
+  }
+}
+
+/* ============================================================
+   KEYBOARD PREVIEW (focus) — only when NOT hovering
+   Mirrors hover while navigating with Tab/Arrow keys.
+   ============================================================ */
+.rating-stars .form_responses:not(:hover)
+  .form_response:focus-within > label {
+  background-color: var(--rs-star-gold);
+}
+@supports selector(:has(*)) {
+  .rating-stars .form_responses:not(:hover)
+    .form_response:focus-within ~ .form_response > label {
+    background-color: var(--rs-star-gold);
+  }
+}
+
+/* ============================================================
+   HOVER PREVIEW (temporarily overrides checked/focus)
+   ============================================================ */
+
+/* Hovered star is gold */
+.rating-stars .form_response:hover > label {
+  background-color: var(--rs-star-gold);
+}
+
+/* …and all “previous” stars (to the left) are gold too */
+.rating-stars .form_response:hover ~ .form_response > label {
+  background-color: var(--rs-star-gold);
+}
+
+/* ---------- Minor niceties ---------- */
+.rating-stars .form_response {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ---------- Bigger tap targets on touch devices (relative to star size) ---------- */
+@media (pointer: coarse) {
+  .rating-stars { --rs-tap-scale: 1.3; } /* 1.3× star size; min 44px still enforced */
+}
