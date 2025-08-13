@@ -1,58 +1,93 @@
-/*!
- * rating-stars-loader.js
- * Injects rating-stars.css and applies the style to chosen form fields
+/*
+ * rating-stars.js
+ * Hybrid mode: Apply to all radios OR specific `data-export` list
+ * No external CSS file needed — styles are injected directly
  */
-(function (cfg) {
-  // --- USER CONFIG ---
-  // Slate admins set window.RATING_STARS_CONFIG before loading this script
-  cfg = cfg || window.RATING_STARS_CONFIG || {};
 
-  var exportsList = Array.isArray(cfg.exports) ? cfg.exports : [];
-  var cssUrl = cfg.cssUrl || "https://cdn.jsdelivr.net/gh/<ORG>/rating-stars@v1.0.0/rating-stars.css";
-  var globalVars = cfg.vars || {};
-  var perFieldVars = cfg.perFieldVars || {};
+(function() {
+  // Default CSS variables
+  var css = `
+:root {
+  --rs-star-size: 32px;
+  --rs-star-gap: 0px;
+  --rs-star-grey: #bdbdbd;
+  --rs-star-gold: #fbc02d;
+}
 
-  // --- Inject CSS dynamically ---
-  var link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = cssUrl;
-  document.head.appendChild(link);
+.rating-stars .form_responses {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: var(--rs-star-gap);
+}
+.rating-stars input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.rating-stars label {
+  display: inline-block;
+  width: var(--rs-star-size);
+  height: var(--rs-star-size);
+  font-size: 0;
+  cursor: pointer;
+  background-color: var(--rs-star-grey);
+  -webkit-mask: var(--star-mask) center / 100% 100% no-repeat;
+  mask: var(--star-mask) center / 100% 100% no-repeat;
+}
 
-  // --- Apply classes and variables ---
-  function applyStars() {
-    if (!exportsList.length) return;
-    var selector = exportsList
-      .map(function (exp) {
-        return '.form_question.form_radio[data-export="' + exp + '"]';
-      })
-      .join(",");
+/* Star mask variable (must be separate for Safari compatibility) */
+:root {
+  --star-mask: url("data:image/svg+xml;utf8, \
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'> \
+<path fill='black' d='M12 17.27L18.18 21l-1.64-7.03 \
+L22 9.24l-7.19-.62L12 2 9.19 8.62 \
+2 9.24l5.46 4.73L5.82 21z'/> \
+</svg>");
+}
 
-    document.querySelectorAll(selector).forEach(function (el) {
-      el.classList.add("rating-stars");
+/* Checked state — only when not hovering */
+.rating-stars .form_responses:not(:hover) input[type="radio"]:checked + label,
+.rating-stars .form_responses:not(:hover) .form_response:has(input[type="radio"]:checked) ~ .form_response > label {
+  background-color: var(--rs-star-gold);
+}
 
-      // Apply global CSS variables
-      for (var k in globalVars) {
-        if (Object.prototype.hasOwnProperty.call(globalVars, k)) {
-          el.style.setProperty(k, globalVars[k]);
-        }
-      }
+/* Hover preview overrides */
+.rating-stars .form_response:hover > label,
+.rating-stars .form_response:hover ~ .form_response > label {
+  background-color: var(--rs-star-gold);
+}
 
-      // Apply per-field overrides
-      var expVal = el.getAttribute("data-export");
-      if (perFieldVars[expVal]) {
-        var varsForField = perFieldVars[expVal];
-        for (var v in varsForField) {
-          if (Object.prototype.hasOwnProperty.call(varsForField, v)) {
-            el.style.setProperty(v, varsForField[v]);
-          }
-        }
-      }
-    });
-  }
+/* Keyboard focus preview */
+.rating-stars .form_response:focus-within > label,
+.rating-stars .form_response:focus-within ~ .form_response > label {
+  background-color: var(--rs-star-gold);
+}
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", applyStars);
+.rating-stars .form_response {
+  display: inline-flex;
+  align-items: center;
+}
+`;
+
+  // Inject CSS into <head>
+  var style = document.createElement('style');
+  style.textContent = css;
+  document.head.appendChild(style);
+
+  // Determine which fields to target
+  var exportsList = window.RATING_STARS_EXPORTS;
+  var selector;
+  if (Array.isArray(exportsList) && exportsList.length) {
+    selector = exportsList.map(function(exp) {
+      return '.form_question.form_radio[data-export="' + exp + '"]';
+    }).join(',');
   } else {
-    applyStars();
+    selector = '.form_question.form_radio';
   }
-})(window.RATING_STARS_CONFIG || {});
+
+  // Apply .rating-stars to matching fields
+  document.querySelectorAll(selector).forEach(function(el) {
+    el.classList.add('rating-stars');
+  });
+
+})();
