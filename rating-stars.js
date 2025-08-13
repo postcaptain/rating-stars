@@ -21,7 +21,7 @@
     cssHref = src.replace(/rating-stars(\.min)?\.js(\?.*)?$/i, "rating-stars.css$2");
     // Fallback hard URL (edit to your latest tag if needed)
     if (!/\.css/i.test(cssHref)) {
-      cssHref = "https://cdn.jsdelivr.net/gh/postcaptain/rating-stars@v0.8.4/rating-stars.css";
+      cssHref = "https://cdn.jsdelivr.net/gh/postcaptain/rating-stars@v0.8.5/rating-stars.css";
     }
   }
 
